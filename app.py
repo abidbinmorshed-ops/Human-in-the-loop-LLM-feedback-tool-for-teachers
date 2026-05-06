@@ -1,51 +1,94 @@
 import streamlit as st
 from openai import OpenAI
+from pypdf import PdfReader
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.title("AI Feedback Assistant")
+st.write("Upload or paste student work and marking criteria.")
 
-st.write("Paste student answer and rubric")
+def extract_pdf_text(uploaded_file):
+    if uploaded_file is not None:
+        reader = PdfReader(uploaded_file)
+        text = ""
+        for page in reader.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+        return text
+    return ""
 
-# Inputs
-rubric = st.text_area("Marking Criteria (Rubric)")
-student_answer = st.text_area("Student Answer")
+# PDF uploads
+st.subheader("Upload Files")
 
-tone = st.selectbox("Tone", ["Supportive", "Direct"])
+rubric_pdf = st.file_uploader("Upload Marking Criteria PDF", type=["pdf"])
+student_pdf = st.file_uploader("Upload Student Work PDF", type=["pdf"])
+
+rubric_pdf_text = extract_pdf_text(rubric_pdf)
+student_pdf_text = extract_pdf_text(student_pdf)
+
+# Manual text option
+st.subheader("Or Paste Text Manually")
+
+rubric_text = st.text_area("Marking Criteria / Rubric", value=rubric_pdf_text, height=180)
+student_answer = st.text_area("Student Work / Answer", value=student_pdf_text, height=220)
+
+tone = st.selectbox("Tone", ["Supportive", "Direct", "Balanced"])
 detail = st.selectbox("Detail Level", ["Brief", "Detailed"])
+feedback_style = st.selectbox("Feedback Style", ["Hints only", "Improvement suggestions", "Detailed guidance"])
 
 if st.button("Generate Feedback"):
-    if rubric and student_answer:
-        
+    if rubric_text.strip() and student_answer.strip():
+
         prompt = f"""
-        You are a university teacher.
+You are an experienced university teacher.
 
-        Marking criteria:
-        {rubric}
+Your task is to generate feedback on the student's work using the marking criteria.
 
-        Student answer:
-        {student_answer}
+Marking criteria:
+{rubric_text}
 
-        Tone: {tone}
-        Detail level: {detail}
+Student work:
+{student_answer}
 
-        Generate feedback in:
-        1. Strengths
-        2. Weaknesses
-        3. Suggestions
+Teacher settings:
+Tone: {tone}
+Detail level: {detail}
+Feedback style: {feedback_style}
 
-        Do not give full answers. Guide the student.
-        """
+Generate feedback in this structure:
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
-        )
+1. Strengths
+2. Areas for improvement
+3. Rubric-based comments
+4. Suggested feedforward advice
+
+Rules:
+- Do not give a final grade.
+- Do not invent marks.
+- Do not rewrite the whole assignment for the student.
+- Do not provide full answers.
+- Keep the teacher as the final author.
+- Feedback must be editable and suitable for teacher review.
+"""
+
+        with st.spinner("Generating feedback..."):
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}]
+            )
 
         feedback = response.choices[0].message.content
 
-        st.subheader("Feedback")
-        st.write(feedback)
+        st.subheader("AI Draft Feedback")
+        editable_feedback = st.text_area("Teacher Editable Feedback", value=feedback, height=350)
+
+        st.download_button(
+            label="Download Final Feedback",
+            data=editable_feedback,
+            file_name="final_feedback.txt",
+            mime="text/plain"
+        )
 
     else:
-        st.warning("Please fill both fields.")
+        st.warning("Please upload or paste both marking criteria and student work.")

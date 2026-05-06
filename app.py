@@ -33,10 +33,36 @@ st.subheader("Or Paste Text Manually")
 rubric_text = st.text_area("Marking Criteria / Rubric", value=rubric_pdf_text, height=180)
 student_answer = st.text_area("Student Work / Answer", value=student_pdf_text, height=220)
 
-tone = st.selectbox("Tone", ["Supportive", "Direct", "Balanced"])
-detail = st.selectbox("Detail Level", ["Brief", "Detailed"])
-feedback_style = st.selectbox("Feedback Style", ["Hints only", "Improvement suggestions", "Detailed guidance"])
+tone = st.selectbox("Tone", [
+    "Warm and encouraging",
+    "Professional and balanced",
+    "Direct and clear",
+    "Gentle and supportive",
+    "Firm but respectful",
+    "Motivational",
+    "Neutral academic"
+])
 
+detail = st.selectbox("Detail Level", [
+    "Very brief",
+    "Brief",
+    "Moderate",
+    "Detailed",
+    "Very detailed with examples"
+])
+
+feedback_style = st.selectbox("Feedback Style", [
+    "Human teacher comment",
+    "Strengths and improvements",
+    "Rubric-based feedback",
+    "Feedforward advice",
+    "Question-based guidance",
+    "Kind but honest feedback",
+    "Student-friendly simple language",
+    "Higher education academic style",
+    "Coaching style",
+    "Balanced praise and correction"
+])
 if st.button("Generate Feedback"):
     if rubric_text.strip() and student_answer.strip():
 
@@ -55,6 +81,10 @@ Teacher settings:
 Tone: {tone}
 Detail level: {detail}
 Feedback style: {feedback_style}
+
+Write the feedback in a natural human teacher voice.
+Avoid robotic, generic, or overly polished AI language.
+Make it sound like a real educator reviewing student work.
 
 Generate feedback in this structure:
 

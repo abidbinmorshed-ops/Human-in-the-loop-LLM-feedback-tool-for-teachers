@@ -1,32 +1,51 @@
 import streamlit as st
+from openai import OpenAI
+
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 st.title("AI Feedback Assistant")
 
 st.write("Paste student answer and rubric")
 
-# Input fields
+# Inputs
 rubric = st.text_area("Marking Criteria (Rubric)")
 student_answer = st.text_area("Student Answer")
 
 tone = st.selectbox("Tone", ["Supportive", "Direct"])
 detail = st.selectbox("Detail Level", ["Brief", "Detailed"])
 
-# Button
 if st.button("Generate Feedback"):
-    st.write("Generating feedback...")
+    if rubric and student_answer:
+        
+        prompt = f"""
+        You are a university teacher.
 
-    # Temporary fake output (no AI yet)
-    st.subheader("Feedback")
-    st.write(f"""
-    Tone: {tone}
-    Detail: {detail}
+        Marking criteria:
+        {rubric}
 
-    Strengths:
-    - Good attempt at answering the question.
+        Student answer:
+        {student_answer}
 
-    Weaknesses:
-    - Needs more explanation.
+        Tone: {tone}
+        Detail level: {detail}
 
-    Suggestions:
-    - Add more examples and detail.
-    """)
+        Generate feedback in:
+        1. Strengths
+        2. Weaknesses
+        3. Suggestions
+
+        Do not give full answers. Guide the student.
+        """
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        feedback = response.choices[0].message.content
+
+        st.subheader("Feedback")
+        st.write(feedback)
+
+    else:
+        st.warning("Please fill both fields.")
